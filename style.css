@@ -1,0 +1,122 @@
+/* body {
+    font-family: Arial, sans-serif;
+    margin: 0;
+    background-color: #f9f9f9;
+    text-align: center;
+}
+  
+h1 {
+    margin: 20px;
+}
+
+#matrix {
+    display: grid;
+    width: 100vw;
+    height: 100vh;
+    gap: 2px;
+    background-color: #f0f0f0;
+  }
+  
+  .cell {
+    position: relative;
+    background-color: #ddd;
+    overflow: hidden;
+    border: 1px solid #ccc;
+  }
+  
+  .avatar {
+    max-width: 100%;
+    max-height: 100%;
+    background-size: cover; 
+    background-position: center;
+    object-fit: cover; 
+}
+
+  
+  .handle {
+    position: absolute;
+    bottom: 5px;
+    left: 5px;
+    font-size: 10px;
+    color: white;
+    background-color: rgba(0, 0, 0, 0.6);
+    padding: 2px 4px;
+    border-radius: 3px;
+  }
+   */
+
+/*part 3*/
+   /* body {
+    font-family: Arial, sans-serif;
+    margin: 0;
+    padding: 0;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    height: 100vh;
+    background-color: #f5f5f5;
+  }
+  
+  #grid {
+    display: grid;
+    grid-template-columns: repeat(100, 10px);
+    grid-template-rows: repeat(100, 10px);
+    gap: 1px;
+    background-color: #ddd;
+  }
+  
+  .block {
+    background-size: cover;
+    background-position: center;
+    position: relative;
+  }
+  
+  .handle {
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    background: rgba(0, 0, 0, 0.6);
+    color: white;
+    font-size: 8px;
+    padding: 2px;
+    text-align: center;
+    width: 100%;
+  }
+   */
+
+   body {
+    font-family: Arial, sans-serif;
+    margin: 0;
+    padding: 0;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    height: 100vh;
+    background-color: #f5f5f5;
+  }
+  
+  #grid {
+    position: relative;
+    width: 1000px;
+    height: 1000px;
+    background-color: #ddd;
+    display: block;
+  }
+  
+  .block {
+    position: absolute;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    overflow: hidden;
+    color: white;
+  }
+  
+  .overlay {
+    background: rgba(0, 0, 0, 0.6);
+    padding: 5px;
+    font-size: 12px;
+    text-align: center;
+    width: 100%;
+  }
+  

@@ -1,0 +1,81 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Treemap with Avatars using D3.js</title>
+
+    <style>
+      .container {
+        position: relative;
+        width: 100px;
+        height: 100px;
+        margin: 0 auto;
+      }
+
+      .topleft {
+        position: absolute;
+        top: 8px;
+        left: 16px;
+        font-size: 18px;
+      }
+
+      /* .tile > image {
+        transition: transform 0.2s;
+      }
+
+      .tile > image:hover {
+        -ms-transform: scale(1.5); 
+        -webkit-transform: scale(1.5);
+        transform: scale(1.5);
+      } */
+
+      img {
+        width: 100%;
+        height: auto;
+      }
+
+      .zoom {
+        transition: transform 0.2s;
+        padding: 50px;
+        background-color: green;
+        width: 100px;
+        height: 100px;
+        margin: 0 auto;
+      }
+
+      .zoom:hover {
+        -ms-transform: scale(1.5); /* IE 9 */
+        -webkit-transform: scale(1.5); /* Safari 3-8 */
+        transform: scale(1.5);
+        transform-origin: center; /* Ensure scaling happens from the center */
+      }
+
+      svg {
+        overflow: visible; /* Ensure the SVG container allows overflow */
+      }
+    </style>
+  </head>
+  <body>
+    <h2>Image Text</h2>
+    <p>Add some text to an image in the top left corner:</p>
+
+    <div class="container">
+      <svg width="800" height="600">
+        <g class="tile" transform="translate(1, 1)">
+          <image
+            class="zoom"
+            x="0"
+            y="0"
+            href="251370.jpg"
+            alt="Cinque Terre"
+          />
+          <text x="5" y="303.5" class="topleft">Top Left</text>
+        </g>
+      </svg>
+    </div>
+
+    <div class="zoom"></div>
+    <!-- <img class="zoom" src="251370.jpg" alt="Cinque Terre" /> -->
+  </body>
+</html>
