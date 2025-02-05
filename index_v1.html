@@ -18,8 +18,8 @@
       background: linear-gradient(to right, #f0f0f0, #e0e0e0);
     }
 
-    .treemap-container {
-      width: 50%;
+    .treemap {
+      width: 100%;
       position: relative;
       margin: auto;
     }
@@ -37,14 +37,12 @@
       color: white;
       text-shadow: 1px 1px 2px black;
       overflow: hidden;
-      margin-top: 25vh;
+      /* margin-top: 25vh; */
     }
 
     .tile.active {
       border: 3px solid purple;
       transform: scale(1.5);
-      /* height: 15rem !important;
-      width: 15rem !important; */
       z-index: 9;
     }
 
@@ -65,7 +63,7 @@
       transition: transform 0.3s ease;
     }
 
-    .tooltip {
+    .custom-tooltip {
       position: absolute;
       padding: 5px;
       background: rgba(0, 0, 0, 0.7);
@@ -109,15 +107,67 @@
       right: 0;
       position: absolute;
     }
+
+    button {
+      background-color: #1f883d;
+      color: #fff;
+      border: none;
+      border-radius: 0 0.375rem 0.375rem 0;
+    }
+
+    #repoSearch {
+      width: 60%;
+      padding: 8px;
+      font-size: 16px;
+      box-sizing: border-box;
+      border-radius: 0.375rem 0 0 0.375rem;
+    }
+
+    #suggestionDropdown {
+      position: absolute;
+      top: 4rem;
+      max-height: 300px;
+      overflow-y: auto;
+      width: max-content;
+      border: 1px solid #ddd;
+      background-color: #fff;
+      box-shadow: 0px 8px 16px rgba(0, 0, 0, 0.2);
+      display: none;
+      z-index: 999;
+    }
+
+    #suggestionDropdown div {
+      padding: 8px;
+      cursor: pointer;
+      font-size: 14px;
+    }
+
+    #suggestionDropdown div:hover {
+      background-color: #f0f0f0;
+    }
+
+    .state-button {
+      padding: 8px;
+    }
   </style>
 </head>
 
 <body>
-  <div id="treemap" class="treemap-container"></div>
-  <div class="tooltip" id="tooltip"></div>
+  <div class="background-separator d-none"></div>
+  <header>Header goes here</header>
+  <div class="menu d-flex flex-column align-items-stretch justify-content-center w-25 mx-auto">
+    <div class="search-container d-flex justify-content-center align-items-stretch">
+      <input type="text" id="repoSearch" placeholder="Search for repositories...">
+      <div id="suggestionDropdown" class="dropdown"></div>
+      <button type="submit" class="state-button">Find</button>
+    </div>
+  </div>
+  <div class="d-flex flex-column align-items-stretch justify-content-center w-25 mx-auto treemap-container">
+    <div id="treemap" class="treemap"></div>
+    <div class="custom-tooltip" id="tooltip"></div>
+  </div>
 
   <div class="profile-container d-none">
-    <div class="background-separator"></div>
     <div class="card-container d-flex align-items-center">
       <div class="card mx-auto" style="width: 18rem;">
         <button type="button" class="btn-close" aria-label="Close" onclick="closeCard()"></button>
@@ -162,7 +212,12 @@
     function closeCard() {
       const profileContainer = document.querySelector(".profile-container");
       profileContainer.classList.add("d-none");
+
+      const backgroundSeparator = document.querySelector(".background-separator");
+      backgroundSeparator.classList.add("d-none");
     }
+
+    const Factor = 2 / 3; // Scale factor for treemap tiles
 
 
     async function createTreemap(owner, repo) {
@@ -191,14 +246,15 @@
       treemap(root);
 
       const treemapContainer = document.querySelector("#treemap");
+      treemapContainer.innerHTML = ""; // Clear previous treemap
 
       root.leaves().forEach((d) => {
         const tile = document.createElement("div");
         tile.classList.add("tile");
-        tile.style.left = `${d.x0 / 2}px`;
-        tile.style.top = `${d.y0 / 2}px`;
-        tile.style.width = `${(d.x1 - d.x0) / 2}px`;
-        tile.style.height = `${(d.y1 - d.y0) / 2}px`;
+        tile.style.left = `${d.x0 * Factor}px`;
+        tile.style.top = `${d.y0 * Factor}px`;
+        tile.style.width = `${(d.x1 - d.x0) * Factor}px`;
+        tile.style.height = `${(d.y1 - d.y0) * Factor}px`;
 
         const img = document.createElement("img");
         img.src = d.data.avatar;
@@ -228,6 +284,9 @@
           const profileContainer = document.querySelector(".profile-container");
           profileContainer.classList.remove("d-none");
 
+          const backgroundSeparator = document.querySelector(".background-separator");
+          backgroundSeparator.classList.remove("d-none");
+
           const card = profileContainer.querySelector(".card");
           const img = card.querySelector("img");
           img.src = d.data.avatar;
@@ -256,26 +315,26 @@
         const tiles = treemapContainer.querySelectorAll(".tile");
         tiles.forEach((tile, i) => {
           const d = root.leaves()[i];
-          tile.style.left = `${d.x0 / 2} px`;
-          tile.style.top = `${d.y0 / 2} px`;
-          tile.style.width = `${(d.x1 - d.x0) / 2} px`;
-          tile.style.height = `${(d.y1 - d.y0) / 2} px`;
+          tile.style.left = `${d.x0 * Factor}px`;
+          tile.style.top = `${d.y0 * Factor}px`;
+          tile.style.width = `${(d.x1 - d.x0) * Factor}px`;
+          tile.style.height = `${(d.y1 - d.y0) * Factor}px`;
 
           const img = tile.querySelector("img");
-          img.style.width = `${(d.x1 - d.x0) / 2} px`;
-          img.style.height = `${(d.y1 - d.y0) / 2} px`;
+          img.style.width = `${(d.x1 - d.x0) * Factor}px`;
+          img.style.height = `${(d.y1 - d.y0) * Factor}px`;
         });
 
         // Update tooltip position on resize
         const tooltip = document.querySelector("#tooltip");
         tooltip.style.left = `${Math.min(
           window.innerWidth - tooltip.clientWidth,
-          parseInt(tooltip.style.left)
+          parseInt(tooltip.style.left) || 0
         )
           } px`;
         tooltip.style.top = `${Math.min(
           window.innerHeight - tooltip.clientHeight,
-          parseInt(tooltip.style.top)
+          parseInt(tooltip.style.top) || 0
         )
           } px`;
       });
@@ -329,6 +388,71 @@
 
     createTreemap("microsoft", "vscode");
     setTimeout(applyHoverEffect, 500);
+
+    let debounceTimeout;
+
+    const searchInput = document.getElementById("repoSearch");
+    const suggestionDropdown = document.getElementById("suggestionDropdown");
+
+    searchInput.addEventListener("input", function (event) {
+      clearTimeout(debounceTimeout);
+      debounceTimeout = setTimeout(() => {
+        const query = event.target.value;
+        if (query.length > 0) {
+          fetchRepoSuggestions(query);
+        } else {
+          suggestionDropdown.style.display = "none"; // Hide dropdown if input is empty
+        }
+      }, 500); // 500ms debounce delay
+    });
+
+    async function fetchRepoSuggestions(query) {
+      const url = `https://api.github.com/search/repositories?q=${query}&per_page=10`;
+
+      try {
+        const response = await fetch(url);
+        const data = await response.json();
+
+        const suggestions = data.items.map(item => ({
+          name: item.name,
+          orgName: item.owner.login,
+        }));
+
+        displaySuggestions(suggestions);
+      } catch (error) {
+        console.error("Error fetching repositories:", error);
+      }
+    }
+
+    function displaySuggestions(suggestions) {
+      suggestionDropdown.innerHTML = '';
+
+      if (suggestions.length === 0) {
+        suggestionDropdown.style.display = "none";
+        return;
+      }
+
+      suggestions.forEach(suggestion => {
+        const suggestionDiv = document.createElement("div");
+        const subtext = document.createElement("sub");
+        subtext.textContent = ` by ${suggestion.orgName}`.toUpperCase();
+
+        suggestionDiv.textContent = `${suggestion.name}`;
+        suggestionDiv.appendChild(subtext);
+
+        // Add event listener to handle click
+        suggestionDiv.addEventListener("click", () => { suggestionDropdown.style.display = "none"; findStats(suggestion) });
+        suggestionDropdown.appendChild(suggestionDiv);
+      });
+
+      suggestionDropdown.style.display = "block"; // Show the dropdown when there are suggestions
+    }
+
+    function findStats(selectedRepo) {
+      createTreemap(selectedRepo.orgName, selectedRepo.name);
+      // Log the selected repository or you can fetch more details here
+    }
+
   </script>
 </body>
 
