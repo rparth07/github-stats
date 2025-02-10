@@ -32,6 +32,11 @@ function closeCard() {
     ".background-separator"
   );
   backgroundSeparator.classList.add("d-none");
+
+  const urlParams = new URLSearchParams(window.location.search);
+  urlParams.delete("contributor");
+  const newUrl = window.location.pathname + "?" + urlParams.toString();
+  history.pushState(null, "", newUrl);
 }
 
 const Factor = 2 / 3; // Scale factor for treemap tiles
@@ -94,32 +99,22 @@ async function createTreemap(owner, repo) {
     });
 
     tile.addEventListener("click", () => {
-      const profileContainer =
-        document.querySelector(".profile-container");
-      profileContainer.classList.remove("d-none");
-
-      const backgroundSeparator = document.querySelector(
-        ".background-separator"
-      );
-      backgroundSeparator.classList.remove("d-none");
-
-      const card = profileContainer.querySelector(".card");
-      const img = card.querySelector("img");
-      img.src = d.data.avatar;
-
-      const title = card.querySelector(".card-title");
-      title.textContent = d.data.name;
-
-      const text = card.querySelector(".card-text");
-      text.textContent = `@${d.data.name}: ${d.data.contributions} contributions`;
-
-      const btn = card.querySelector(".btn");
-      btn.textContent = "View on GitHub";
-      btn.href = `https://github.com/${d.data.name}`;
+      displayCard(d.data);
     });
 
     treemapContainer.appendChild(tile);
   });
+
+  const urlParams = new URLSearchParams(window.location.search);
+  urlParams.set("repo-owner", owner);
+  urlParams.set("repo-name", repo);
+  let contributorName = urlParams.get("contributor");
+  if (contributorName) {
+    const contributor = topContributors.find((c) => c.name === contributorName);
+    displayCard(contributor);
+  }
+  const newUrl = window.location.pathname + "?" + urlParams.toString();
+  history.pushState(null, "", newUrl);
 
   window.addEventListener("resize", () => {
     const width = window.innerWidth;
@@ -152,6 +147,35 @@ async function createTreemap(owner, repo) {
       parseInt(tooltip.style.top) || 0
     )}px`;
   });
+}
+
+function displayCard(contributor) {
+  const profileContainer = document.querySelector(".profile-container");
+  profileContainer.classList.remove("d-none");
+
+  const backgroundSeparator = document.querySelector(
+    ".background-separator"
+  );
+  backgroundSeparator.classList.remove("d-none");
+
+  const card = profileContainer.querySelector(".card");
+  const img = card.querySelector("img");
+  img.src = contributor.avatar;
+
+  const title = card.querySelector(".card-title");
+  title.textContent = contributor.name;
+
+  const text = card.querySelector(".card-text");
+  text.textContent = `@${contributor.name}: ${contributor.contributions} contributions`;
+
+  const btn = card.querySelector(".btn");
+  btn.textContent = "View on GitHub";
+  btn.href = `https://github.com/${contributor.name}`;
+
+  const urlParams = new URLSearchParams(window.location.search);
+  urlParams.set("contributor", contributor.name);
+  const newUrl = window.location.pathname + "?" + urlParams.toString();
+  history.pushState(null, "", newUrl);
 }
 
 function getScaleFactor(width, minSize, maxSize) {
@@ -198,28 +222,6 @@ function applyHoverEffect() {
     });
   });
 }
-
-createTreemap("microsoft", "vscode");
-setTimeout(applyHoverEffect, 500);
-
-let debounceTimeout;
-
-const searchInput = document.getElementById("repoSearch");
-const suggestionDropdown = document.getElementById("suggestionDropdown");
-
-searchInput.addEventListener("input", function (event) {
-  clearTimeout(debounceTimeout);
-  const xMarkIcons = document.getElementsByClassName("fa-xmark");
-  if (xMarkIcons.length > 0) xMarkIcons[0].classList.remove("d-none");
-  debounceTimeout = setTimeout(() => {
-    const query = event.target.value;
-    if (query.length > 0) {
-      fetchRepoSuggestions(query);
-    } else {
-      suggestionDropdown.style.display = "none";
-    }
-  }, 500);
-});
 
 async function fetchRepoSuggestions(query) {
   const url = `https://api.github.com/search/repositories?q=${query}&per_page=10`;
@@ -279,3 +281,27 @@ function clearInput() {
   const xMarkIcons = document.getElementsByClassName("fa-xmark");
   if (xMarkIcons.length > 0) xMarkIcons[0].classList.add("d-none");
 }
+
+document.addEventListener("DOMContentLoaded", function () {
+  createTreemap("microsoft", "vscode");
+  setTimeout(applyHoverEffect, 500);
+
+  let debounceTimeout;
+
+  const searchInput = document.getElementById("repoSearch");
+  const suggestionDropdown = document.getElementById("suggestionDropdown");
+
+  searchInput.addEventListener("input", function (event) {
+    clearTimeout(debounceTimeout);
+    const xMarkIcons = document.getElementsByClassName("fa-xmark");
+    if (xMarkIcons.length > 0) xMarkIcons[0].classList.remove("d-none");
+    debounceTimeout = setTimeout(() => {
+      const query = event.target.value;
+      if (query.length > 0) {
+        fetchRepoSuggestions(query);
+      } else {
+        suggestionDropdown.style.display = "none";
+      }
+    }, 500);
+  })
+});
