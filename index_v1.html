@@ -16,10 +16,17 @@
       integrity="sha384-YvpcrYf0tY3lHB60NNkmXc5s9fDVZLESaAA55NDzOxhy9GkcIdslK1eN7N6jIeHz"
       crossorigin="anonymous"
     ></script>
+    <link
+      rel="stylesheet"
+      href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.7.2/css/all.min.css"
+      integrity="sha512-Evv84Mr4kqVGRNSgIGL/F/aIDqQb7xQ2vcrdIwxfjThSH8CSR7PBEakCr51Ck+w+/U6swU2Im1vVX0SVk9ABhg=="
+      crossorigin="anonymous"
+      referrerpolicy="no-referrer"
+    />
     <style>
       body {
         margin: 0;
-        overflow: hidden;
+        overflow: hidden scroll;
         background: linear-gradient(to right, #f0f0f0, #e0e0e0);
       }
 
@@ -153,20 +160,19 @@
         background-color: #1f883d;
         color: #fff;
         border: none;
-        border-radius: 0 0.375rem 0.375rem 0;
+        border-radius: 0.375rem;
       }
 
       #repoSearch {
-        width: 60%;
         padding: 8px;
         font-size: 16px;
         box-sizing: border-box;
-        border-radius: 0.375rem 0 0 0.375rem;
+        border-radius: 0.375rem;
       }
 
       #suggestionDropdown {
         position: absolute;
-        top: 4rem;
+        top: 7rem;
         max-height: 300px;
         overflow-y: auto;
         width: max-content;
@@ -189,14 +195,6 @@
 
       .state-button {
         padding: 8px;
-      }
-
-      .treemap-container {
-        display: flex;
-        justify-content: center;
-        align-items: center;
-        width: 100vw;
-        height: 100vh;
       }
 
       /* Refined card body and text styles */
@@ -222,29 +220,86 @@
         padding: 0.5rem 1rem;
         border-radius: 25px;
         text-decoration: none;
-        transition: background 0.3s ease;
+        transition: all 0.5s ease;
       }
+
       .btn:hover {
         background: linear-gradient(45deg, #16a085, #1f883d);
+        transform: scale(1.1);
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.4);
       }
 
       .repository-title {
-        margin: 20px auto;
         padding: 15px 20px;
-        font-size: 1.5rem;
+        font-size: 2rem;
         font-weight: bold;
-        background: linear-gradient(135deg, #4caf50, #2e7d32);
+      }
+
+      .search-container {
+        justify-content: space-between;
+        margin: 0 1rem;
+      }
+
+      header,
+      footer {
+        background-color: #1f883d;
+      }
+
+      ul {
+        list-style-type: none;
+      }
+
+      ul li a {
         color: #fff;
-        border-radius: 8px;
-        box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
-        text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.2);
+        text-decoration: none;
+      }
+
+      .cancel-icon {
+        position: absolute;
+        right: 17rem;
+        top: 11.6%;
+        transform: translateY(-50%);
+        display: block;
+        cursor: pointer;
+        /* Add your icon styles here (e.g., font-awesome class) */
       }
     </style>
   </head>
 
   <body>
     <div class="background-separator d-none"></div>
-    <header>Header goes here</header>
+    <header class="header py-2">
+      <div
+        class="container mx-auto d-flex align-items-center justify-content-between"
+      >
+        <div class="d-flex align-items-center gap-2 text-white">
+          <svg
+            xmlns="http://www.w3.org/2000/svg"
+            width="24"
+            height="24"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            stroke-width="2"
+            stroke-linecap="round"
+            stroke-linejoin="round"
+            class="lucide lucide-github"
+          >
+            <path
+              d="M15 22v-4a4.8 4.8 0 0 0-1-3.5c3 0 6-2 6-5.5.08-1.25-.27-2.48-1-3.5.28-1.15.28-2.35 0-3.5 0 0-1 0-3 1.5-2.64-.5-5.36-.5-8 0C6 2 5 2 5 2c-.3 1.15-.3 2.35 0 3.5A5.403 5.403 0 0 0 4 9c0 3.5 3 5.5 6 5.5-.39.49-.68 1.05-.85 1.65-.17.6-.22 1.23-.15 1.85v4"
+            ></path>
+            <path d="M9 18c-4.51 2-5-2-7-2"></path>
+          </svg>
+          <h4 class="m-0">GitHub Contributor Treemap</h4>
+        </div>
+        <nav class="nav">
+          <ul class="d-flex gap-4 m-2">
+            <li><a href="/">Home</a></li>
+            <li><a href="#about">About</a></li>
+          </ul>
+        </nav>
+      </div>
+    </header>
     <div class="profile-container d-none">
       <div class="card-container d-flex align-items-center">
         <div class="card mx-auto" style="width: 18rem">
@@ -266,20 +321,18 @@
       </div>
     </div>
 
-    <div
-      class="menu d-flex flex-column align-items-stretch justify-content-center w-25 mx-auto"
-    >
-      <div
-        class="search-container d-flex justify-content-center align-items-stretch"
-      >
-        <input
-          type="text"
-          id="repoSearch"
-          placeholder="Search for repositories..."
-        />
-        <div id="suggestionDropdown" class="dropdown"></div>
-        <button type="submit" class="state-button">Find</button>
-      </div>
+    <div class="d-flex gap-2 search-container mt-3">
+      <input
+        type="text"
+        id="repoSearch"
+        class="border flex-fill px-3"
+        placeholder="Search for repositories..."
+      />
+      <span class="cancel-icon" onclick="clearInput()">
+        <i class="fa-solid fa-xmark d-none" aria-hidden="true"></i>
+      </span>
+      <div id="suggestionDropdown" class="dropdown"></div>
+      <button type="submit" class="state-button px-5">Generate Treemap</button>
     </div>
 
     <div class="repository-title text-center">microsoft/vscode</div>
@@ -291,6 +344,13 @@
       <div class="custom-tooltip" id="tooltip"></div>
     </div>
 
+    <footer class="w-full text-white p-4">
+      <div class="container mx-auto text-center">
+        <p class="m-0">
+          © 2025 GitHub Contributor Treemap. All rights reserved.
+        </p>
+      </div>
+    </footer>
     <script>
       async function fetchContributors(owner, repo) {
         const response = await fetch(
@@ -504,6 +564,8 @@
 
       searchInput.addEventListener("input", function (event) {
         clearTimeout(debounceTimeout);
+        const xMarkIcons = document.getElementsByClassName("fa-xmark");
+        if (xMarkIcons.length > 0) xMarkIcons[0].classList.remove("d-none");
         debounceTimeout = setTimeout(() => {
           const query = event.target.value;
           if (query.length > 0) {
@@ -563,6 +625,14 @@
 
       function findStats(selectedRepo) {
         createTreemap(selectedRepo.orgName, selectedRepo.name);
+      }
+
+      function clearInput() {
+        const searchInput = document.getElementById("repoSearch");
+        searchInput.value = "";
+        suggestionDropdown.style.display = "none";
+        const xMarkIcons = document.getElementsByClassName("fa-xmark");
+        if (xMarkIcons.length > 0) xMarkIcons[0].classList.add("d-none");
       }
     </script>
   </body>
