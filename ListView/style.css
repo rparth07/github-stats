@@ -1,0 +1,150 @@
+body {
+  background-color: #f6f8fa;
+  font-family: Arial, sans-serif;
+}
+
+.listview {
+  width: 100%;
+  position: relative;
+  margin: auto;
+}
+
+button {
+  background-color: #0366d6;
+  color: #fff;
+  border: none;
+  border-radius: 0.375rem;
+}
+
+#repoSearch {
+  padding: 8px;
+  font-size: 16px;
+  box-sizing: border-box;
+  border-radius: 0.375rem;
+}
+
+#suggestionDropdown {
+  position: absolute;
+  top: 8.5rem;
+  max-height: 300px;
+  overflow-y: auto;
+  width: max-content;
+  border: 1px solid #ddd;
+  background-color: #fff;
+  box-shadow: 0px 8px 16px rgba(0, 0, 0, 0.2);
+  display: none;
+  z-index: 999;
+}
+
+#suggestionDropdown div {
+  padding: 8px;
+  cursor: pointer;
+  font-size: 14px;
+}
+
+#suggestionDropdown div:hover {
+  background-color: #f0f0f0;
+}
+
+.state-button {
+  padding: 8px;
+}
+
+.card {
+  width: 220px;
+  margin: 15px;
+  text-align: center;
+  border-radius: 8px;
+  background-color: white;
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+  padding: 10px;
+  transition: all 0.5s;
+}
+
+.card:hover {
+  background: #0366d6;
+  transform: scale(1.1);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.4);
+  color: #fff;
+  transition: all 0.5s;
+}
+
+.card:hover .btn {
+  background: #fff;
+  color: #0366d6;
+  font-weight: bold;
+}
+
+.card:hover p {
+  color: #fff;
+}
+
+.card img {
+  width: 80px;
+  height: 80px;
+  border-radius: 50%;
+  margin-top: 10px;
+}
+
+.card h5 {
+  margin-top: 10px;
+  font-size: 16px;
+  font-weight: bold;
+}
+
+.card p {
+  color: #586069;
+  font-size: 14px;
+  margin-bottom: 5px;
+}
+
+.listview-container {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+}
+
+.btn {
+  background: #0366d6;
+  border: none;
+  color: #fff;
+  padding: 0.5rem 1rem;
+  border-radius: 25px;
+  text-decoration: none;
+  transition: all 0.5s ease;
+}
+
+.repository-title {
+  padding: 15px 20px;
+  font-size: 2rem;
+  font-weight: bold;
+}
+
+.search-container {
+  justify-content: space-between;
+  margin: 0 1rem;
+}
+
+header,
+footer {
+  /* background-color: #1f883d; */
+  background-color: #0366d6;
+}
+
+ul {
+  list-style-type: none;
+}
+
+ul li a {
+  color: #fff;
+  text-decoration: none;
+}
+
+.cancel-icon {
+  position: absolute;
+  right: 24rem;
+  top: 14.6%;
+  transform: translateY(-50%);
+  display: block;
+  cursor: pointer;
+}
