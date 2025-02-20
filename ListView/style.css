@@ -148,3 +148,13 @@ ul li a {
   display: block;
   cursor: pointer;
 }
+
+.share-icon {
+  position: absolute;
+  right: 1rem;
+  cursor: pointer;
+}
+
+.share-icon:hover {
+  color: #9687eb;
+}

@@ -38,6 +38,7 @@ async function createListView(owner, repo) {
     card.className = "card";
 
     card.innerHTML = `
+      <i class="share-icon fa-solid fa-share" onclick="shareProfile('${contributor.login}')"></i>
       <div class="align-items-center d-flex gap-4">
         <img src="${contributor.avatar_url}" alt="${contributor.login}" />
         <span>#${index + 1}</span>
@@ -50,6 +51,10 @@ async function createListView(owner, repo) {
     `;
     treemapContainer.appendChild(card);
   });
+}
+
+function shareProfile(contributor) {
+  console.log("Sharing profile of", contributor);
 }
 
 function findStats(selectedRepo) {
