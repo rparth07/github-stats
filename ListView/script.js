@@ -27,7 +27,6 @@ async function fetchRepoSuggestions(query) {
   }
 }
 
-
 async function createListView(owner, repo) {
   const contributors = await fetchContributors(owner, repo);
   const treemapContainer = document.getElementById("listview");
@@ -35,12 +34,13 @@ async function createListView(owner, repo) {
 
   contributors.forEach((contributor, index) => {
     const card = document.createElement("div");
-    card.className = "card";
+    card.className = `card ${contributor.login}`;
 
     card.innerHTML = `
-      <i class="share-icon fa-solid fa-share" onclick="shareProfile('${contributor.login}')"></i>
+      <i class="share-icon fa-regular fa-clipboard" onclick="shareProfile('${contributor.login}', this)"></i>
       <div class="align-items-center d-flex gap-4">
         <img src="${contributor.avatar_url}" alt="${contributor.login}" />
+        <a href="#${index + 1}"></a>
         <span>#${index + 1}</span>
       </div>
       <h5>${contributor.login}</h5>
@@ -51,10 +51,50 @@ async function createListView(owner, repo) {
     `;
     treemapContainer.appendChild(card);
   });
+
+  const urlParams = new URLSearchParams(window.location.search);
+  urlParams.set("repo-owner", owner);
+  urlParams.set("repo-name", repo);
+  let contributorName = urlParams.get("contributor");
+  if(contributorName === "" || contributorName === "null" || contributorName === "undefined") {
+    urlParams.delete("contributor");
+    contributorName = null;
+  }
+
+  if (contributorName) {
+    const contributor = contributors.find((c) => c.login === contributorName);
+    console.log(contributor);
+    if (contributor)
+      highlightContributor(contributor);
+  }
+  const newUrl = window.location.pathname + "?" + urlParams.toString();
+  history.pushState(null, "", newUrl);
 }
 
-function shareProfile(contributor) {
-  console.log("Sharing profile of", contributor);
+function highlightContributor(contributor) {
+  const contributorNameClass = `.${contributor.login}`;
+  const card = document.querySelector(contributorNameClass);
+  if (card) {
+    card.classList.add("highlight");
+    card.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  }
+}
+
+function shareProfile(contributorName, icon) {
+  if(icon.classList.contains("fa-regular")) {
+    icon.classList.remove("fa-regular");
+    icon.classList.add("fa-solid");
+  }
+  const urlParams = new URLSearchParams(window.location.search);
+  urlParams.set("contributor", contributorName);
+  const newUrl = window.location.pathname + "?" + urlParams.toString();
+  history.pushState(null, "", newUrl);
+  navigator.clipboard.writeText(window.location.href);
+
+  setTimeout(() => {
+    icon.classList.remove("fa-solid");
+    icon.classList.add("fa-regular");
+  }, 2000);
 }
 
 function findStats(selectedRepo) {
@@ -119,4 +159,17 @@ document.addEventListener("DOMContentLoaded", function () {
       }
     }, 500);
   })
+});
+
+
+document.addEventListener("click", function (event) {
+  const urlParams = new URLSearchParams(window.location.search);
+  urlParams.delete("contributor");
+  const newUrl = window.location.pathname + "?" + urlParams.toString();
+  history.pushState(null, "", newUrl);
+
+  const card = document.querySelector(".card.highlight");
+  if (card) {
+    card.classList.remove("highlight");
+  }
 });
