@@ -139,7 +139,12 @@ function clearInput() {
 }
 
 document.addEventListener("DOMContentLoaded", function () {
-  createListView("microsoft", "vscode");
+  const urlParams = new URLSearchParams(window.location.search);
+  if(urlParams.has("repo-owner") && urlParams.has("repo-name")) {
+    createListView(urlParams.get("repo-owner"), urlParams.get("repo-name"));
+  } else {
+    createListView("microsoft", "vscode");
+  }
 
   let debounceTimeout;
 
