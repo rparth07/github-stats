@@ -283,7 +283,12 @@ function clearInput() {
 }
 
 document.addEventListener("DOMContentLoaded", function () {
-  createTreemap("microsoft", "vscode");
+  const urlParams = new URLSearchParams(window.location.search);
+  if(urlParams.has("repo-owner") && urlParams.has("repo-name")) {
+    createTreemap(urlParams.get("repo-owner"), urlParams.get("repo-name"));
+  } else {
+    createTreemap("microsoft", "vscode");
+  }
   setTimeout(applyHoverEffect, 500);
 
   let debounceTimeout;
