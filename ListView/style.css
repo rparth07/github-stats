@@ -62,21 +62,27 @@ button {
 }
 
 .card:hover {
-  background: #0366d6;
   transform: scale(1.1);
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.4);
-  color: #fff;
   transition: all 0.5s;
 }
 
-.card:hover .btn {
+.highlight {
+  background: #0366d6;
+  color: #fff;
+  transform: scale(1.1);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.4);
+  transition: all 0.5s;
+}
+
+.highlight .btn {
   background: #fff;
   color: #0366d6;
   font-weight: bold;
 }
 
-.card:hover p {
-  color: #fff;
+.highlight p {
+  color: #fff !important;
 }
 
 .card img {
@@ -147,4 +153,14 @@ ul li a {
   transform: translateY(-50%);
   display: block;
   cursor: pointer;
+}
+
+.share-icon {
+  position: absolute;
+  right: 1rem;
+  cursor: pointer;
+}
+
+.share-icon:hover {
+  color: #0366d6;
 }
