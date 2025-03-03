@@ -1,0 +1,25 @@
+{
+  "devDependencies": {
+    "buffer": "^6.0.3",
+    "events": "^3.3.0",
+    "gh-contributions-finder": "^1.0.0",
+    "os-browserify": "^0.3.0",
+    "parcel": "^2.13.3",
+    "path-browserify": "^1.0.1",
+    "process": "^0.11.10",
+    "stream-browserify": "^3.0.0",
+    "url": "^0.11.4",
+    "util": "^0.12.5"
+  },
+  "scripts": {
+    "start": "parcel ./User/*.html",
+    "build": "parcel build ./User/*.html"
+  },
+  "type": "module",
+  "dependencies": {
+    "get-stream": "^9.0.1",
+    "jest": "^29.7.0",
+    "puppeteer": "^24.3.0",
+    "puppeteer-core": "^24.3.0"
+  }
+}
