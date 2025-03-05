@@ -1,14 +1,25 @@
-import findContributions from 'gh-contributions-finder';
-// const findContributions = require('gh-contributions-finder');
-
+import findContributions from "gh-contributions-finder";
+import "./style.css";
 
 async function fetchContributions(username) {
-  const response = await findContributions(username);
-  if (!response.ok) {
-    alert("Error fetching contributions.");
-    throw new Error("Failed to fetch contributions.");
+  try {
+    const result = await findContributions(username, {
+      shouldCreateFile: false, // Adjust based on your needs
+      shouldCopyToClipboard: false, // Adjust based on your needs
+      outputFile: "", // Adjust based on your needs
+    });
+
+    if (!result) {
+      alert("Error fetching contributions.");
+      throw new Error("Failed to fetch contributions.");
+    }
+
+    // Use the result directly, without calling `json()`
+    console.log("Repository links:", result);
+    return result; // You can return the result to use it elsewhere
+  } catch (error) {
+    console.error("Error:", error);
   }
-  return await response.json();
 }
 
 function scaleContributions(data) {
@@ -30,9 +41,7 @@ function closeCard() {
   const profileContainer = document.querySelector(".profile-container");
   profileContainer.classList.add("d-none");
 
-  const backgroundSeparator = document.querySelector(
-    ".background-separator"
-  );
+  const backgroundSeparator = document.querySelector(".background-separator");
   backgroundSeparator.classList.add("d-none");
 
   const urlParams = new URLSearchParams(window.location.search);
@@ -54,7 +63,7 @@ async function createTreemap(username) {
   const parseContributions = (url) => {
     const urlPattern = /^https:\/\/github\.com\/([^/]+)\/([^/]+)$/;
     const match = url.match(urlPattern);
-    
+
     if (match) {
       const [, org, repo] = match;
       return {
@@ -62,7 +71,7 @@ async function createTreemap(username) {
         repository: repo,
         url: url,
         avatar: generateAvatarUrl(repo),
-        contributions: 0,//findContributions(username, org, repo),
+        contributions: 0, //findContributions(username, org, repo),
       };
     } else {
       // Handle invalid URL format gracefully
@@ -72,7 +81,9 @@ async function createTreemap(username) {
   };
 
   console.log(contributions);
-  const parsedContributions = contributions.map(parseContributions).filter(item => item !== null);
+  const parsedContributions = contributions
+    .map(parseContributions)
+    .filter((item) => item !== null);
 
   const scaledData = scaleContributions(parsedContributions);
 
@@ -81,9 +92,7 @@ async function createTreemap(username) {
 
   const treemap = d3.treemap().size([width, height]).padding(2);
 
-  const root = d3
-    .hierarchy({ children: scaledData })
-    .sum((d) => d.scaledValue);
+  const root = d3.hierarchy({ children: scaledData }).sum((d) => d.scaledValue);
 
   treemap(root);
 
@@ -107,7 +116,7 @@ async function createTreemap(username) {
     tile.addEventListener("mouseenter", (event) => {
       const tooltip = document.querySelector("#tooltip");
       tooltip.style.visibility = "visible";
-      tooltip.textContent = `@${d.data.org}: ${d.data.repository}: ${d.data.contributions} contributions`;//TODO
+      tooltip.textContent = `@${d.data.org}: ${d.data.repository}: ${d.data.contributions} contributions`; //TODO
       tooltip.style.left = `${event.pageX}px`;
       tooltip.style.top = `${event.pageY}px`;
 
@@ -131,7 +140,9 @@ async function createTreemap(username) {
   let org = urlParams.get("org");
   let repository = urlParams.get("repository");
   if (org && repository) {
-    const contribution = parsedContributions.find((c) => c.org === org && c.repository === repository);
+    const contribution = parsedContributions.find(
+      (c) => c.org === org && c.repository === repository
+    );
     displayCard(contribution);
   }
   const newUrl = window.location.pathname + "?" + urlParams.toString();
@@ -174,9 +185,7 @@ function displayCard(contribution) {
   const profileContainer = document.querySelector(".profile-container");
   profileContainer.classList.remove("d-none");
 
-  const backgroundSeparator = document.querySelector(
-    ".background-separator"
-  );
+  const backgroundSeparator = document.querySelector(".background-separator");
   backgroundSeparator.classList.remove("d-none");
 
   const card = profileContainer.querySelector(".card");
@@ -187,7 +196,7 @@ function displayCard(contribution) {
   title.textContent = contribution.repository;
 
   const text = card.querySelector(".card-text");
-  text.textContent = `@${contribution.org}: ${contribution.repository}: ${contribution.contributions} contributions`;//TODO
+  text.textContent = `@${contribution.org}: ${contribution.repository}: ${contribution.contributions} contributions`; //TODO
 
   const btn = card.querySelector(".btn");
   btn.textContent = "View on GitHub";
@@ -205,8 +214,7 @@ function getScaleFactor(width, minSize, maxSize) {
   const maxScale = 2.0;
 
   return (
-    maxScale -
-    ((width - minSize) / (maxSize - minSize)) * (maxScale - minScale)
+    maxScale - ((width - minSize) / (maxSize - minSize)) * (maxScale - minScale)
   );
 }
 
@@ -301,7 +309,7 @@ function clearInput() {
 
 document.addEventListener("DOMContentLoaded", function () {
   const urlParams = new URLSearchParams(window.location.search);
-  if(urlParams.has("username")) {
+  if (urlParams.has("username")) {
     createTreemap(urlParams.get("username"));
   } else {
     createTreemap("rparth07");
@@ -325,5 +333,5 @@ document.addEventListener("DOMContentLoaded", function () {
         suggestionDropdown.style.display = "none";
       }
     }, 500);
-  })
+  });
 });
