@@ -172,7 +172,7 @@ function render() {
       tile.classList.toggle('small-label', leaf.x1 - leaf.x0 < 85 || leaf.y1 - leaf.y0 < 45);
       tile.classList.toggle('highlight', c.login.toLowerCase() === selected?.toLowerCase());
       const label = `#${c.rank} @${c.login}: ${c.contributions.toLocaleString()} contributions`;
-      tile.title = label; tile.setAttribute('aria-label', label);
+      tile.setAttribute('aria-label', label);
       const caption = document.createElement('span'); caption.textContent = `#${c.rank} ${c.login}`;
       tile.append(avatar(c), caption); tile.addEventListener('click', () => openProfile(c)); container.append(tile);
       treemapTiles.push({ element: tile, leaf });

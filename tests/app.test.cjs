@@ -46,7 +46,8 @@ test('treemap fits desktop and mobile, ranks tiles and has no runtime errors', a
     page.on('pageerror', (e) => errors.push(e.message));
     await ready(page);
     assert.equal(await page.locator('.tile').count(), 100);
-    assert.match(await page.locator('.tile').first().getAttribute('title'), /#1.*1000|#1.*1,000/);
+    assert.match(await page.locator('.tile').first().getAttribute('aria-label'), /#1.*1000|#1.*1,000/);
+    assert.equal(await page.locator('.tile[title]').count(), 0);
     assert.equal(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth), true);
     assert.equal(await page.locator('.tile').evaluateAll((tiles) => tiles.every((tile) => { const t = tile.getBoundingClientRect(), p = tile.parentElement.getBoundingClientRect(); return t.right <= p.right + 1 && t.bottom <= p.bottom + 1; })), true);
     await page.screenshot({ path: `.test-results/${mobile ? 'mobile' : 'desktop'}.png`, fullPage: true });

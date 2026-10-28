@@ -7,7 +7,7 @@ Explore the people behind a public GitHub repository with a contributor treemap 
 ## Features
 
 - Search public repositories with debounced suggestions, or enter `owner/repository` / a GitHub repository URL and press Explore repository or Enter.
-- Responsive treemap with square-root contribution weighting, rank/count tooltips, keyboard selection, and contributor profiles.
+- Responsive treemap with square-root contribution weighting, rank/count previews, keyboard selection, and contributor profiles.
 - Pause the pointer on a contributor for 400ms, or keyboard-focus them, to see their complete profile image, full username, rank, and contribution count. Previews are at least 240px wide when the window allows and sit 12px beside the original tile: right first, then left if needed, or below/above when neither side fits. Previews that overlap the grid allow pointer events through so other tiles stay selectable. Moving across the treemap does not trigger previews; click any tile directly to open its profile. Press Escape to dismiss a preview. Reduced-motion preferences keep resizing immediate.
 - Ranked list view with larger touch targets. Switching views preserves the repository and selected contributor.
 - Share a contributor using the native share dialog where supported or copy their deep link. Opening the link highlights that contributor. GitHub bot usernames work too.
@@ -63,7 +63,7 @@ For an existing Chromium installation, set `PLAYWRIGHT_CHROMIUM_EXECUTABLE_PATH`
 
 - Up to 100 contributors, sorted by GitHub's attributed commit count. These are neither total repository activity nor a measure of contribution quality. GitHub caches statistics.
 - Requests go from the browser directly to GitHub's public API. Unauthenticated rate limits apply per public IP and repository-search limits are more restrictive. No access token is stored or published. If a limit is reached, the app displays an error and retry guidance.
-- Hover or keyboard-focus small tiles to expand them, or use list view for larger selection targets. Labels are hidden where space is limited; full accessible names and tooltips remain available.
+- Hover or keyboard-focus small tiles to expand them, or use list view for larger selection targets. Labels are hidden where space is limited; full accessible names and expansion cards remain available.
 - Shared web links highlight a contributor. PNG/JPEG files cannot contain clickable social-media links; social platforms control their previews. Downloaded SVGs include clickable contributor links when opened in a viewer that supports SVG hyperlinks.
 - Browser Print / PDF provides PDF export; there is no separate PDF generation dependency. Avatar export failures fall back to labeled colored tiles.
 
