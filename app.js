@@ -6,6 +6,8 @@ let selected = new URLSearchParams(location.search).get('contributor');
 const profileCache = new Map();
 let treemapTiles = [], hoveredContributor = null, focusedContributor = null;
 let treemapWidth = 0, treemapHeight = 0;
+let hoverPreview, previewAnimation;
+let hoverTimer, dismissTimer;
 const reducedMotion = matchMedia('(prefers-reduced-motion: reduce)');
 
 function status(message, error = false) {
@@ -72,6 +74,8 @@ async function loadRepository(value, preserveSelection = false) {
   const parsed = parseRepository(value);
   cancelSearch();
   if (!parsed) { status('Enter a repository as owner/repository, paste a GitHub URL, or select a search result.', true); return; }
+  clearHoverTimers();
+  if (hoverPreview) { previewAnimation?.cancel(); hoverPreview.hidden = true; }
   loadController?.abort();
   const controller = loadController = new AbortController();
   if ($('profile-dialog').open) $('profile-dialog').close();
@@ -126,7 +130,9 @@ function render() {
   if (!contributors.length) return;
   const container = listView ? $('contributors') : $('visualization');
   treemapTiles = [];
+  clearHoverTimers();
   hoveredContributor = focusedContributor = null;
+  if (hoverPreview) { previewAnimation?.cancel(); hoverPreview.hidden = true; }
   container.hidden = false;
   container.replaceChildren();
   if (listView) {
@@ -160,41 +166,89 @@ function render() {
     }
   }
 }
-function expandedAxis(start, end, size, minimum) {
-  const length = end - start;
-  const expanded = Math.min(size, Math.max(length * 1.15, Math.min(size * .55, Math.max(length * 1.5, minimum))));
-  const nextStart = Math.max(0, Math.min(size - expanded, start - (expanded - length) / 2));
-  const nextEnd = nextStart + expanded;
-  return (value) => {
-    if (value < start && start > 0) return value * nextStart / start;
-    if (value <= end) return nextStart + (value - start) * expanded / length;
-    return nextEnd + (value - end) * (size - nextEnd) / (size - end);
-  };
+function clearHoverTimers() {
+  clearTimeout(hoverTimer);
+  clearTimeout(dismissTimer);
+}
+function scheduleHover(login) {
+  clearHoverTimers();
+  if (login && login === hoveredContributor) return;
+  if (!login) {
+    dismissTimer = setTimeout(() => { hoveredContributor = null; expandContributor(); }, 180);
+    return;
+  }
+  if (hoverPreview?.classList.contains('over-grid')) { hoveredContributor = null; expandContributor(); }
+  hoverTimer = setTimeout(() => {
+    if ($('profile-dialog').open) return;
+    hoveredContributor = login;
+    expandContributor();
+  }, 400);
 }
 function expandContributor() {
   const active = hoveredContributor || focusedContributor;
-  const target = treemapTiles.find(({ leaf }) => leaf.data.login === active)?.leaf;
-  const container = $('visualization');
-  const warpX = target ? expandedAxis(target.x0, target.x1, container.clientWidth, 128) : (x) => x;
-  const warpY = target ? expandedAxis(target.y0, target.y1, container.clientHeight, 112) : (y) => y;
-  const before = treemapTiles.map(({ element }) => element.getBoundingClientRect());
-  const origin = container.getBoundingClientRect();
-  const next = treemapTiles.map(({ leaf }) => ({ x: warpX(leaf.x0), y: warpY(leaf.y0), width: warpX(leaf.x1) - warpX(leaf.x0), height: warpY(leaf.y1) - warpY(leaf.y0) }));
-  for (let i = 0; i < treemapTiles.length; i++) {
-    const { element, leaf } = treemapTiles[i];
-    const box = next[i];
-    element.getAnimations().forEach((animation) => animation.cancel());
-    element.style.left = `${box.x}px`; element.style.top = `${box.y}px`;
-    element.style.width = `${box.width}px`; element.style.height = `${box.height}px`;
-    element.classList.toggle('small-label', box.width < 85 || box.height < 45);
-    element.classList.toggle('expanded', leaf.data.login === active);
-    if (!reducedMotion.matches) {
-      element.animate([
-        { transform: `translate(${before[i].left - origin.left - box.x}px, ${before[i].top - origin.top - box.y}px) scale(${before[i].width / box.width}, ${before[i].height / box.height})` },
-        { transform: 'none' },
-      ], { duration: 280, easing: 'cubic-bezier(.22, .7, .25, 1)' });
+  const target = treemapTiles.find(({ leaf }) => leaf.data.login === active);
+  for (const { element, leaf } of treemapTiles) element.classList.toggle('expanded', leaf.data.login === active);
+  if (!target) {
+    if (hoverPreview && !hoverPreview.hidden && !hoverPreview.classList.contains('closing')) {
+      previewAnimation?.cancel();
+      hoverPreview.classList.add('closing');
+      if (reducedMotion.matches) hoverPreview.hidden = true;
+      else {
+        previewAnimation = hoverPreview.animate([{ opacity: 1, transform: 'scale(1)' }, { opacity: 0, transform: 'scale(.9)' }], { duration: 130, easing: 'ease-out' });
+        previewAnimation.onfinish = () => { hoverPreview.hidden = true; };
+      }
     }
+    return;
   }
+  if (!hoverPreview) {
+    hoverPreview = document.createElement('button');
+    hoverPreview.type = 'button'; hoverPreview.className = 'contributor-preview';
+    hoverPreview.tabIndex = -1; hoverPreview.setAttribute('aria-hidden', 'true');
+    const image = document.createElement('img'); image.alt = '';
+    const footer = document.createElement('div'); footer.className = 'preview-footer';
+    footer.append(document.createElement('strong'), document.createElement('span'));
+    hoverPreview.append(image, footer); document.body.append(hoverPreview);
+    hoverPreview.addEventListener('mousedown', (event) => event.preventDefault());
+    hoverPreview.addEventListener('click', () => {
+      const contributor = contributors.find((c) => c.login === hoverPreview.dataset.login);
+      if (contributor) openProfile(contributor);
+    });
+    hoverPreview.addEventListener('pointerenter', () => {
+      clearHoverTimers();
+      hoveredContributor = hoverPreview.dataset.login;
+    });
+    hoverPreview.addEventListener('pointerleave', (event) => {
+      if (hoverPreview.hidden || hoverPreview.classList.contains('closing')) return;
+      scheduleHover(event.relatedTarget?.closest?.('#visualization .tile')?.dataset.login || null);
+    });
+  }
+  const c = target.leaf.data;
+  const sameCard = !hoverPreview.hidden && !hoverPreview.classList.contains('closing') && hoverPreview.dataset.login === c.login;
+  previewAnimation?.cancel();
+  hoverPreview.hidden = false; hoverPreview.classList.remove('closing');
+  hoverPreview.dataset.login = c.login;
+  hoverPreview.querySelector('img').src = c.avatar_url;
+  hoverPreview.querySelector('strong').textContent = `#${c.rank} @${c.login}`;
+  hoverPreview.querySelector('.preview-footer span').textContent = `${c.contributions.toLocaleString()} contributions`;
+  const source = target.element.getBoundingClientRect();
+  const width = Math.min(innerWidth - 32, Math.max(240, Math.min(360, source.width * 1.35)));
+  hoverPreview.style.width = `${width}px`;
+  const footerHeight = hoverPreview.querySelector('.preview-footer').offsetHeight;
+  hoverPreview.querySelector('img').style.height = `${Math.min(width - 4, Math.max(48, innerHeight - 36 - footerHeight))}px`;
+  const height = hoverPreview.offsetHeight;
+  const grid = $('visualization').getBoundingClientRect();
+  let left = Math.max(16, Math.min(innerWidth - 16 - width, source.x + source.width / 2 - width / 2));
+  let top = Math.max(16, Math.min(innerHeight - 16 - height, source.y + source.height / 2 - height / 2));
+  let placement = 'fitted';
+  if (source.right + 12 + width <= innerWidth - 16) { left = source.right + 12; placement = 'right'; }
+  else if (source.left - 12 - width >= 16) { left = source.left - 12 - width; placement = 'left'; }
+  else if (source.bottom + 12 + height <= innerHeight - 16) { top = source.bottom + 12; placement = 'below'; }
+  else if (source.top - 12 - height >= 16) { top = source.top - 12 - height; placement = 'above'; }
+  hoverPreview.dataset.placement = placement;
+  hoverPreview.classList.toggle('over-grid', left < grid.right && left + width > grid.left && top < grid.bottom && top + height > grid.top);
+  hoverPreview.style.left = `${left}px`;
+  hoverPreview.style.top = `${top}px`;
+  if (!reducedMotion.matches && !sameCard) previewAnimation = hoverPreview.animate([{ opacity: 0, transform: 'scale(.88)' }, { opacity: 1, transform: 'scale(1)' }], { duration: 220, easing: 'cubic-bezier(.2,.75,.25,1)' });
 }
 function layout(width, height) {
   const root = d3.hierarchy({ children: contributors }).sum((d) => d.contributions === undefined ? 0 : Math.sqrt(Math.max(1, d.contributions))).sort((a, b) => b.value - a.value);
@@ -206,6 +260,7 @@ function safeWebsite(value) {
   try { const url = new URL(/^https?:\/\//i.test(value) ? value : `https://${value}`); return ['https:', 'http:'].includes(url.protocol) && !url.username && !url.password && !/[\s:]/.test(url.hostname) ? url.href : null; } catch { return null; }
 }
 async function openProfile(c) {
+  clearHoverTimers();
   hoveredContributor = focusedContributor = null;
   expandContributor();
   const version = ++profileVersion;
@@ -305,17 +360,23 @@ $('print').addEventListener('click', () => window.print());
 document.querySelectorAll('[data-export]').forEach((el) => el.addEventListener('click', () => exportVisualization(el.dataset.export)));
 $('visualization').addEventListener('pointermove', (event) => {
   if (event.pointerType !== 'mouse' && event.pointerType !== 'pen') return;
+  focusedContributor = null;
   const login = event.target.closest('.tile')?.dataset.login || null;
-  if (login !== hoveredContributor) { hoveredContributor = login; expandContributor(); }
+  scheduleHover(login);
 });
-$('visualization').addEventListener('pointerleave', () => {
-  if (hoveredContributor) { hoveredContributor = null; expandContributor(); }
+$('visualization').addEventListener('pointerleave', (event) => {
+  if (event.relatedTarget instanceof Node && hoverPreview?.contains(event.relatedTarget)) { clearHoverTimers(); return; }
+  scheduleHover(null);
 });
 $('visualization').addEventListener('focusin', (event) => {
-  if (event.target.matches('.tile:focus-visible')) { focusedContributor = event.target.dataset.login; expandContributor(); }
+  if (event.target.matches('.tile:focus-visible')) { clearHoverTimers(); hoveredContributor = null; focusedContributor = event.target.dataset.login; expandContributor(); }
 });
 $('visualization').addEventListener('focusout', () => { focusedContributor = null; expandContributor(); });
-reducedMotion.addEventListener('change', () => { if (reducedMotion.matches) treemapTiles.forEach(({ element }) => element.getAnimations().forEach((animation) => animation.finish())); });
+reducedMotion.addEventListener('change', () => { if (reducedMotion.matches) { previewAnimation?.finish(); expandContributor(); } });
+window.addEventListener('scroll', () => { clearHoverTimers(); if (hoverPreview && !hoverPreview.hidden) { hoveredContributor = focusedContributor = null; expandContributor(); } }, { passive: true });
+document.addEventListener('keydown', (event) => {
+  if (event.key === 'Escape') { clearHoverTimers(); hoveredContributor = focusedContributor = null; expandContributor(); }
+});
 let resizeTimer;
 new ResizeObserver(() => {
   if (!listView) {

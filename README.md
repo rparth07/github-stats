@@ -8,7 +8,7 @@ Explore the people behind a public GitHub repository with a contributor treemap 
 
 - Search public repositories with debounced suggestions, or enter `owner/repository` / a GitHub repository URL and press Generate or Enter.
 - Responsive treemap with square-root contribution weighting, rank/count tooltips, keyboard selection, and contributor profiles.
-- Hover or keyboard-focus a contributor to expand their photo while neighboring tiles move aside. Leaving the tile restores the original layout. Reduced-motion preferences keep resizing immediate.
+- Pause the pointer on a contributor for 400ms, or keyboard-focus them, to see their complete profile image, full username, rank, and contribution count. Previews are at least 240px wide when the window allows and sit 12px beside the original tile: right first, then left if needed, or below/above when neither side fits. Previews that overlap the grid allow pointer events through so other tiles stay selectable. Moving across the treemap does not trigger previews; click any tile directly to open its profile. Press Escape to dismiss a preview. Reduced-motion preferences keep resizing immediate.
 - Ranked list view with larger touch targets. Switching views preserves the repository and selected contributor.
 - Share a contributor using the native share dialog where supported or copy their deep link. Opening the link highlights that contributor. GitHub bot usernames work too.
 - View GitHub profiles and their public website/portfolio field, fetched only when opening a profile.
