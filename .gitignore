@@ -1,1 +1,8 @@
 Idea/*
+
+.netlify/
+dist/
+node_modules/
+.test-results/
+*.md
+!README.md

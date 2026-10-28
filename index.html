@@ -1,0 +1,32 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="description" content="Explore public GitHub repository contributors in an interactive treemap or ranked list. Share contributors and export your visualization.">
+  <title>GitHub Contributor Stats</title>
+  <link rel="stylesheet" href="/style.css">
+  <script defer src="/vendor/d3.min.js"></script>
+  <script defer src="/app.js"></script>
+</head>
+<body>
+<header><div class="header-inner"><a class="brand" href="/">GitHub Contributor Stats</a><nav aria-label="Main navigation"><a id="treemap-link" href="/Treemap/">Treemap</a><a id="list-link" href="/ListView/">List view</a><a href="#about">About</a></nav></div></header>
+<main>
+  <p class="eyebrow">The people behind the project</p>
+  <h1 id="repo-title">Repository contributors</h1>
+  <p class="intro">Explore contributions, discover developers, and share the people who build open source.</p>
+  <form id="search-form" class="search">
+    <label for="repo-search">Find a public repository</label>
+    <div class="input-wrap"><input id="repo-search" name="repository" placeholder="owner/repository or search by name" autocomplete="off" aria-controls="suggestions" aria-expanded="false" required><div id="suggestions" aria-label="Repository suggestions" hidden></div></div>
+    <button class="primary" id="generate" type="submit">Generate</button><button id="clear" type="button">Clear</button>
+  </form>
+  <div class="toolbar"><div><strong id="summary">Loading contributors…</strong><div class="muted">Top 100 contributors · GitHub commit counts</div></div><div class="exports" aria-label="Export visualization"><button data-export="svg" disabled>SVG</button><button data-export="png" disabled>PNG</button><button data-export="jpeg" disabled>JPEG</button><button id="print" disabled>Print / PDF</button></div></div>
+  <p id="status" class="status" role="status" aria-live="polite"></p>
+  <section id="visualization" aria-label="Contributor treemap" hidden></section>
+  <div id="contributors" aria-label="Ranked contributors" hidden></div>
+  <details id="about"><summary>About this visualization</summary><p>Data comes from the public GitHub API. We show up to 100 contributors, ranked by commits attributed by GitHub. This is not a measure of code quality or a complete record of reviews, issues, or other work. GitHub caches contributor statistics, so recent commits may take time to appear.</p><p>Treemap areas use square-root weighting to keep smaller contributors visible. On small screens, use the list view for easier selection. Hover or focus a tile for rank and contribution count; select a contributor for their profile and share link. Portfolio links come from the public website field on their GitHub profile.</p><p>SVG, PNG, and JPEG exports include the currently loaded contributors. Use Print / PDF and select “Save as PDF” in your browser. Avatars are embedded when available; a labeled tile is used if an avatar cannot be downloaded. Share links reopen the selected repository and highlight the contributor. Public API rate limits are shared with other requests from your network; retry later if the limit is reached. No GitHub token is required or stored.</p><p><a href="https://github.com/rparth07/github-stats" target="_blank" rel="noopener noreferrer">View source on GitHub</a></p></details>
+</main>
+<dialog id="profile-dialog" aria-labelledby="profile-name"><img id="profile-avatar" alt=""><h2 id="profile-name"></h2><p id="profile-count"></p><div id="portfolio" role="status"></div><div class="dialog-actions"><a id="profile-link" class="button primary" target="_blank" rel="noopener noreferrer">View on GitHub</a><button id="share">Copy share link</button><button id="close-profile">Close</button></div></dialog>
+<footer>Built for the open source community · Data from GitHub</footer>
+</body>
+</html>
