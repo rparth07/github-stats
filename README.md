@@ -17,45 +17,41 @@ Explore the people behind a public GitHub repository with a contributor treemap 
 
 ## Run locally
 
-Prerequisites: Node.js 22 or newer (includes npm) and Python 3. No GitHub token, environment variables, database, or Netlify login is needed. Internet access is needed to load GitHub data and avatars.
+Only Python 3 is needed to run the website. It is a static HTML/CSS/JavaScript project: npm installation and a build are optional. Internet access is needed to load GitHub data and avatars.
 
-1. Clone the repository and enter its folder. Skip this step if you already have a local checkout.
+1. Clone the current `master` branch into a new folder, then enter it:
 
 ```sh
-git clone https://github.com/rparth07/github-stats.git
-cd github-stats
+git clone --branch master https://github.com/rparth07/github-stats.git github-stats-local
+cd github-stats-local
 ```
 
-2. Install dependencies and build the static site:
+2. Start a server from that folder, where `index.html`, `app.js`, and `style.css` are located:
 
 ```sh
-npm ci
-npm run build
-```
-
-3. Start the local server from the repository folder:
-
-```sh
-python -m http.server 4177 --bind 127.0.0.1 --directory dist
+python -m http.server 4177 --bind 127.0.0.1 --directory .
 ```
 
 On Windows, if `python` is unavailable but the Python launcher is installed, use:
 
 ```powershell
-py -3 -m http.server 4177 --bind 127.0.0.1 --directory dist
+py -3 -m http.server 4177 --bind 127.0.0.1 --directory .
 ```
 
-4. Open [http://127.0.0.1:4177](http://127.0.0.1:4177) in your browser. The homepage is the treemap; use the navigation to switch to `/Treemap/` or `/ListView/`.
+3. Open [http://127.0.0.1:4177](http://127.0.0.1:4177) in your browser. The homepage is the treemap; use the navigation to switch to `/Treemap/` or `/ListView/`.
 
-Keep the server terminal open. Press `Ctrl+C` to stop it. After editing `app.js`, `style.css`, or an HTML file, run `npm run build` in another terminal and refresh the browser. There is no automatic rebuild or live reload. Serve the site over HTTP; opening `index.html` directly does not support its root-relative asset paths.
+Keep the server terminal open. Press `Ctrl+C` to stop it. After editing a source file, refresh the browser; no build is required when serving the repository folder. Serve the site over HTTP; opening `index.html` directly does not support its root-relative asset paths.
+
+The current `master` branch includes `package.json` for optional build and test commands. If it is missing in an existing folder, check that you are in the correct repository and branch, or use the fresh-clone instructions above. They leave your existing checkout untouched.
 
 If port 4177 is already in use, choose another port in the server command and open the matching URL. A GitHub rate-limit error means you need to wait for the API limit to reset; it does not require rebuilding the site.
 
 ## Test
 
-From the repository folder, after `npm ci`:
+Optional development tools require Node.js 22 or newer (includes npm). From the current repository folder:
 
 ```sh
+npm ci
 npx playwright install chromium
 npm run build
 npm test
