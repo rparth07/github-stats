@@ -4,6 +4,9 @@ const listView = location.pathname.toLowerCase().includes('/listview');
 let contributors = [], repository = '', loadController, searchController, searchTimer, profileVersion = 0;
 let selected = new URLSearchParams(location.search).get('contributor');
 const profileCache = new Map();
+let treemapTiles = [], hoveredContributor = null, focusedContributor = null;
+let treemapWidth = 0, treemapHeight = 0;
+const reducedMotion = matchMedia('(prefers-reduced-motion: reduce)');
 
 function status(message, error = false) {
   $('status').textContent = message;
@@ -122,6 +125,8 @@ function avatar(c) {
 function render() {
   if (!contributors.length) return;
   const container = listView ? $('contributors') : $('visualization');
+  treemapTiles = [];
+  hoveredContributor = focusedContributor = null;
   container.hidden = false;
   container.replaceChildren();
   if (listView) {
@@ -138,7 +143,8 @@ function render() {
     }
   } else {
     if (!window.d3) { status('The treemap library could not load. Please reload or use the list view.', true); return; }
-    for (const leaf of layout(container.clientWidth, container.clientHeight)) {
+    treemapWidth = container.clientWidth; treemapHeight = container.clientHeight;
+    for (const leaf of layout(treemapWidth, treemapHeight)) {
       const c = leaf.data;
       const tile = document.createElement('button');
       tile.className = 'tile'; tile.type = 'button'; tile.dataset.login = c.login;
@@ -150,6 +156,43 @@ function render() {
       tile.title = label; tile.setAttribute('aria-label', label);
       const caption = document.createElement('span'); caption.textContent = `#${c.rank} ${c.login}`;
       tile.append(avatar(c), caption); tile.addEventListener('click', () => openProfile(c)); container.append(tile);
+      treemapTiles.push({ element: tile, leaf });
+    }
+  }
+}
+function expandedAxis(start, end, size, minimum) {
+  const length = end - start;
+  const expanded = Math.min(size, Math.max(length * 1.15, Math.min(size * .55, Math.max(length * 1.5, minimum))));
+  const nextStart = Math.max(0, Math.min(size - expanded, start - (expanded - length) / 2));
+  const nextEnd = nextStart + expanded;
+  return (value) => {
+    if (value < start && start > 0) return value * nextStart / start;
+    if (value <= end) return nextStart + (value - start) * expanded / length;
+    return nextEnd + (value - end) * (size - nextEnd) / (size - end);
+  };
+}
+function expandContributor() {
+  const active = hoveredContributor || focusedContributor;
+  const target = treemapTiles.find(({ leaf }) => leaf.data.login === active)?.leaf;
+  const container = $('visualization');
+  const warpX = target ? expandedAxis(target.x0, target.x1, container.clientWidth, 128) : (x) => x;
+  const warpY = target ? expandedAxis(target.y0, target.y1, container.clientHeight, 112) : (y) => y;
+  const before = treemapTiles.map(({ element }) => element.getBoundingClientRect());
+  const origin = container.getBoundingClientRect();
+  const next = treemapTiles.map(({ leaf }) => ({ x: warpX(leaf.x0), y: warpY(leaf.y0), width: warpX(leaf.x1) - warpX(leaf.x0), height: warpY(leaf.y1) - warpY(leaf.y0) }));
+  for (let i = 0; i < treemapTiles.length; i++) {
+    const { element, leaf } = treemapTiles[i];
+    const box = next[i];
+    element.getAnimations().forEach((animation) => animation.cancel());
+    element.style.left = `${box.x}px`; element.style.top = `${box.y}px`;
+    element.style.width = `${box.width}px`; element.style.height = `${box.height}px`;
+    element.classList.toggle('small-label', box.width < 85 || box.height < 45);
+    element.classList.toggle('expanded', leaf.data.login === active);
+    if (!reducedMotion.matches) {
+      element.animate([
+        { transform: `translate(${before[i].left - origin.left - box.x}px, ${before[i].top - origin.top - box.y}px) scale(${before[i].width / box.width}, ${before[i].height / box.height})` },
+        { transform: 'none' },
+      ], { duration: 280, easing: 'cubic-bezier(.22, .7, .25, 1)' });
     }
   }
 }
@@ -163,6 +206,8 @@ function safeWebsite(value) {
   try { const url = new URL(/^https?:\/\//i.test(value) ? value : `https://${value}`); return ['https:', 'http:'].includes(url.protocol) && !url.username && !url.password && !/[\s:]/.test(url.hostname) ? url.href : null; } catch { return null; }
 }
 async function openProfile(c) {
+  hoveredContributor = focusedContributor = null;
+  expandContributor();
   const version = ++profileVersion;
   selected = c.login; syncURL();
   document.querySelectorAll('[data-login]').forEach((el) => el.classList.toggle('highlight', el.dataset.login === selected));
@@ -258,8 +303,28 @@ $('profile-dialog').addEventListener('close', () => { profileVersion++; selected
 $('share').addEventListener('click', shareProfile);
 $('print').addEventListener('click', () => window.print());
 document.querySelectorAll('[data-export]').forEach((el) => el.addEventListener('click', () => exportVisualization(el.dataset.export)));
+$('visualization').addEventListener('pointermove', (event) => {
+  if (event.pointerType !== 'mouse' && event.pointerType !== 'pen') return;
+  const login = event.target.closest('.tile')?.dataset.login || null;
+  if (login !== hoveredContributor) { hoveredContributor = login; expandContributor(); }
+});
+$('visualization').addEventListener('pointerleave', () => {
+  if (hoveredContributor) { hoveredContributor = null; expandContributor(); }
+});
+$('visualization').addEventListener('focusin', (event) => {
+  if (event.target.matches('.tile:focus-visible')) { focusedContributor = event.target.dataset.login; expandContributor(); }
+});
+$('visualization').addEventListener('focusout', () => { focusedContributor = null; expandContributor(); });
+reducedMotion.addEventListener('change', () => { if (reducedMotion.matches) treemapTiles.forEach(({ element }) => element.getAnimations().forEach((animation) => animation.finish())); });
 let resizeTimer;
-new ResizeObserver(() => { if (!listView) { clearTimeout(resizeTimer); resizeTimer = setTimeout(render, 100); } }).observe($('visualization'));
+new ResizeObserver(() => {
+  if (!listView) {
+    clearTimeout(resizeTimer);
+    resizeTimer = setTimeout(() => {
+      if (treemapWidth !== $('visualization').clientWidth || treemapHeight !== $('visualization').clientHeight) render();
+    }, 100);
+  }
+}).observe($('visualization'));
 $(listView ? 'list-link' : 'treemap-link').setAttribute('aria-current', 'page');
 const params = new URLSearchParams(location.search);
 const initial = params.has('repo-owner') && params.has('repo-name') ? `${params.get('repo-owner')}/${params.get('repo-name')}` : 'microsoft/vscode';

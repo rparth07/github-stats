@@ -96,3 +96,60 @@ test('SVG, PNG and JPEG exports download valid images with CSP enabled', async (
   await page.pdf({ path: '.test-results/contributors.pdf' });
   await page.close();
 });
+async function tileBoxes(page) {
+  return page.locator('.tile').evaluateAll((tiles) => tiles.map((tile) => {
+    const { x, y, width, height } = tile.getBoundingClientRect(); return { x, y, width, height };
+  }));
+}
+async function finishMotion(page) {
+  await page.waitForFunction(() => document.querySelectorAll('.tile').length > 0 && [...document.querySelectorAll('.tile')].every((tile) => tile.getAnimations().length === 0));
+}
+function assertTiling(boxes, bounds) {
+  for (let i = 0; i < boxes.length; i++) {
+    const a = boxes[i];
+    assert.ok(a.x >= bounds.x - 1 && a.y >= bounds.y - 1 && a.x + a.width <= bounds.x + bounds.width + 1 && a.y + a.height <= bounds.y + bounds.height + 1, 'tile stays inside the treemap');
+    for (let j = i + 1; j < boxes.length; j++) {
+      const b = boxes[j];
+      assert.ok(Math.min(a.x + a.width, b.x + b.width) - Math.max(a.x, b.x) < .5 || Math.min(a.y + a.height, b.y + b.height) - Math.max(a.y, b.y) < .5, 'tiles do not overlap');
+    }
+  }
+}
+test('hover expands tiles, moves neighbors without overlap, stays stable, and restores the layout', async () => {
+  const page = await pageWithData(); await page.setViewportSize({ width: 1440, height: 1600 }); await ready(page);
+  const original = await tileBoxes(page), bounds = await page.locator('#visualization').boundingBox();
+  for (const index of [0, 50, 99]) {
+    const box = original[index];
+    await page.mouse.move(box.x + box.width / 2, box.y + box.height / 2);
+    await finishMotion(page);
+    const expanded = await tileBoxes(page);
+    assert.ok(expanded[index].width > box.width && expanded[index].height > box.height, `hovered photo ${index} expands in both dimensions: ${JSON.stringify({ before: box, after: expanded[index] })}`);
+    assert.ok(expanded.some((b, i) => i !== index && (Math.abs(b.x - original[i].x) > 1 || Math.abs(b.y - original[i].y) > 1)), 'neighbors move aside');
+    assertTiling(expanded, bounds);
+    await page.screenshot({ path: `.test-results/hover-${index}.png`, fullPage: true });
+    assert.equal(await page.locator('.tile.expanded').getAttribute('data-login'), people[index].login, 'stationary pointer retains the same expanded tile');
+    const expandedBox = expanded[index];
+    await page.mouse.move(expandedBox.x + expandedBox.width - 5, expandedBox.y + expandedBox.height / 2);
+    assert.equal(await page.locator('.tile.expanded').getAttribute('data-login'), people[index].login, 'expanded hit area remains interactive');
+    await page.mouse.move(bounds.x - 10, bounds.y - 10);
+    await finishMotion(page);
+    const restored = await tileBoxes(page);
+    restored.forEach((b, i) => { for (const key of ['x', 'y', 'width', 'height']) assert.ok(Math.abs(b[key] - original[i][key]) < .1, 'original geometry returns'); });
+  }
+  await page.close();
+});
+test('keyboard expansion supports reduced motion, rapid retargeting and resize', async () => {
+  const page = await pageWithData(); await ready(page);
+  await page.emulateMedia({ reducedMotion: 'reduce' });
+  const before = await tileBoxes(page);
+  await page.locator('.tile').nth(40).focus();
+  assert.equal(await page.locator('.tile.expanded').getAttribute('data-login'), people[40].login);
+  assert.ok((await tileBoxes(page))[40].width > before[40].width);
+  assert.equal(await page.locator('.tile').evaluateAll(tiles => tiles.flatMap(t => t.getAnimations()).length), 0);
+  await page.locator('#repo-search').focus();
+  for (const index of [2, 61, 98, 20]) await page.locator('.tile').nth(index).hover();
+  await page.mouse.move(0, 0);
+  await page.setViewportSize({ width: 700, height: 1000 });
+  await page.waitForFunction(() => [...document.querySelectorAll('.tile')].every(tile => tile.getBoundingClientRect().right <= document.getElementById('visualization').getBoundingClientRect().right + 1));
+  assertTiling(await tileBoxes(page), await page.locator('#visualization').boundingBox());
+  await page.close();
+});
