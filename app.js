@@ -90,6 +90,9 @@ async function loadRepository(value, preserveSelection = false) {
   $('repo-search').value = parsed;
   $('repo-title').textContent = parsed;
   $('summary').textContent = 'Loading contributors…';
+  $('map-state').hidden = false;
+  $('map-state-title').textContent = 'Finding the people behind the project';
+  $('map-state-detail').textContent = 'Fetching public contributor data from GitHub.';
   $('generate').textContent = 'Loading…';
   $('search-form').setAttribute('aria-busy', 'true');
   status('Fetching public GitHub contributors…');
@@ -98,11 +101,16 @@ async function loadRepository(value, preserveSelection = false) {
     if (controller.signal.aborted) return;
     repository = parsed;
     contributors = data.filter((c) => c.login && Number.isFinite(c.contributions)).sort((a, b) => b.contributions - a.contributions).map((c, i) => ({ ...c, rank: i + 1 }));
-    $('summary').textContent = `${contributors.length} contributors · ${contributors.reduce((sum, c) => sum + c.contributions, 0).toLocaleString()} commits shown`;
+    $('summary').textContent = `${contributors.length} ${contributors.length === 1 ? 'contributor' : 'contributors'} · ${contributors.reduce((sum, c) => sum + c.contributions, 0).toLocaleString()} commits shown`;
+    $('map-state').hidden = contributors.length > 0;
+    if (!contributors.length) {
+      $('map-state-title').textContent = 'No contributors to show yet';
+      $('map-state-detail').textContent = 'This repository may be empty or its statistics may still be processing. Try another public repository.';
+    }
     if (selected && !contributors.some((c) => c.login.toLowerCase() === selected.toLowerCase())) {
       selected = null;
       status('The shared contributor is not in this repository’s top 100. Showing available contributors.');
-    } else status(contributors.length ? 'Select a contributor to see their profile and share link.' : 'No contributors found. This repository may be empty or its statistics may still be processing.');
+    } else status(contributors.length ? '' : 'No contributors found. This repository may be empty or its statistics may still be processing.');
     syncURL();
     render();
     document.querySelectorAll('[data-export], #print').forEach((el) => el.disabled = !contributors.length);
@@ -113,9 +121,14 @@ async function loadRepository(value, preserveSelection = false) {
       if (!listView) openProfile(contributor);
     }
   } catch (error) {
-    if (error.name !== 'AbortError') { $('summary').textContent = 'Unable to load contributors'; status(error.message || 'Network error. Check your connection and retry.', true); }
+    if (error.name !== 'AbortError') {
+      $('summary').textContent = 'Unable to load contributors';
+      $('map-state-title').textContent = 'We couldn’t load this repository';
+      $('map-state-detail').textContent = 'Check the repository name and the message above, then try again.';
+      status(error.message || 'Network error. Check your connection and retry.', true);
+    }
   } finally {
-    if (loadController === controller) { $('generate').textContent = 'Generate'; $('search-form').removeAttribute('aria-busy'); }
+    if (loadController === controller) { $('generate').textContent = 'Explore repository'; $('search-form').removeAttribute('aria-busy'); }
   }
 }
 function avatar(c) {
@@ -387,6 +400,12 @@ new ResizeObserver(() => {
   }
 }).observe($('visualization'));
 $(listView ? 'list-link' : 'treemap-link').setAttribute('aria-current', 'page');
+if (listView) {
+  $('view-heading').textContent = 'Contributor list';
+  document.querySelector('.hint-pointer').textContent = 'Select a contributor to view their profile and share link.';
+  document.querySelector('.escape-hint').hidden = true;
+  document.querySelector('.map-caption span:last-child').hidden = true;
+}
 const params = new URLSearchParams(location.search);
 const initial = params.has('repo-owner') && params.has('repo-name') ? `${params.get('repo-owner')}/${params.get('repo-name')}` : 'microsoft/vscode';
 loadRepository(initial, true);

@@ -70,16 +70,33 @@ test('bot share links highlight safely, preserve repo across views, and missing 
 });
 test('Generate handles direct URLs, search selection, empty repos, 404 and rate limits', async () => {
   const page = await pageWithData(); await ready(page);
+  assert.equal(await page.locator('#map-state').isVisible(), false);
   for (const [input, expected] of [['https://github.com/example/another', '100 contributors'], ['missing/repo', 'Unable to load'], ['limited/repo', 'Unable to load'], ['empty/repo', '0 contributors']]) {
     await page.locator('#repo-search').fill(input); await page.locator('#generate').click();
     await page.waitForFunction((text) => document.getElementById('summary').textContent.includes(text), expected);
     if (input.startsWith('limited')) assert.match(await page.locator('#status').textContent(), /rate limit/);
-    if (!input.startsWith('https')) assert.equal(await page.locator('[data-export=svg]').isDisabled(), true);
+    if (!input.startsWith('https')) {
+      assert.equal(await page.locator('[data-export=svg]').isDisabled(), true);
+      assert.equal(await page.locator('#map-state').isVisible(), true);
+      assert.match(await page.locator('#map-state-title').textContent(), input.startsWith('empty') ? /No contributors/ : /couldn’t load/);
+    }
   }
   await page.locator('#repo-search').fill('example'); await page.locator('#suggestions button').waitFor();
   await page.locator('#suggestions button').click();
   await page.waitForFunction(() => document.getElementById('summary').textContent.includes('100 contributors'));
   assert.match(page.url(), /repo-owner=example&repo-name=project/);
+  assert.equal(await page.locator('#map-state').isVisible(), false);
+  await page.close();
+});
+test('keyboard navigation can skip the header and reach labeled repository controls', async () => {
+  const page = await pageWithData(); await ready(page);
+  await page.keyboard.press('Tab');
+  assert.equal(await page.locator('.skip-link').evaluate(link => document.activeElement === link), true);
+  await page.keyboard.press('Enter');
+  assert.equal(await page.evaluate(() => document.activeElement.id), 'main');
+  await page.keyboard.press('Tab');
+  assert.equal(await page.evaluate(() => document.activeElement.id), 'repo-search');
+  assert.equal(await page.locator('#treemap-link').getAttribute('aria-current'), 'page');
   await page.close();
 });
 test('SVG, PNG and JPEG exports download valid images with CSP enabled', async () => {
