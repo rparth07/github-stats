@@ -26,6 +26,9 @@ before(async () => {
 after(async () => { await browser?.close(); server?.close(); });
 async function pageWithData(options = {}) {
   const page = await browser.newPage({ viewport: options.mobile ? { width: 375, height: 812 } : { width: 1440, height: 1000 } });
+  // Keep functional tests offline and prevent synthetic analytics visits.
+  await page.route('https://static.cloudflareinsights.com/**', (route) => route.abort());
+  await page.route('**/cdn-cgi/rum*', (route) => route.abort());
   await page.route('https://avatars.githubusercontent.com/**', (route) => route.fulfill({ contentType: 'image/png', body: Buffer.from('iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAwMCAO+aPuYAAAAASUVORK5CYII=', 'base64'), headers: { 'access-control-allow-origin': '*' } }));
   await page.route('https://api.github.com/**', (route) => {
     const url = route.request().url();
@@ -40,6 +43,28 @@ async function pageWithData(options = {}) {
   return page;
 }
 async function ready(page, suffix = '/') { await page.goto(base + suffix); await page.waitForFunction(() => document.getElementById('summary').textContent.includes('100 contributors')); }
+test('every HTML entry point loads one Cloudflare beacon with the supplied token and CSP', async () => {
+  for (const routePath of ['/', '/Treemap/', '/ListView/']) {
+    const page = await pageWithData();
+    let loads = 0;
+    await page.route('https://static.cloudflareinsights.com/beacon.min.js', (route) => {
+      loads++;
+      return route.fulfill({ contentType: 'text/javascript', body: 'export {};', headers: { 'access-control-allow-origin': '*' } });
+    });
+    const response = await page.goto(base + routePath);
+    assert.equal(response.status(), 200);
+    const policy = response.headers()['content-security-policy'];
+    assert.match(policy, /script-src[^;]*https:\/\/static\.cloudflareinsights\.com\/beacon\.min\.js/);
+    assert.match(policy, /connect-src[^;]*https:\/\/cloudflareinsights\.com\/cdn-cgi\/rum/);
+    assert.equal(loads, 1);
+    const beacon = page.locator('script[data-cf-beacon]');
+    assert.equal(await beacon.count(), 1);
+    assert.equal(await beacon.getAttribute('type'), 'module');
+    assert.deepEqual(JSON.parse(await beacon.getAttribute('data-cf-beacon')), { token: '9dfe005e80294ddb9b464ba79b5342c5' });
+    assert.equal(await page.locator('script[src*="cloudflareinsights"]').count(), 1);
+    await page.close();
+  }
+});
 test('treemap fits desktop and mobile, ranks tiles and has no runtime errors', async () => {
   for (const mobile of [false, true]) {
     const page = await pageWithData({ mobile }); const errors = [];
